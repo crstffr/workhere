@@ -1,0 +1,15 @@
+{
+  "name": "workhere",
+  "version": "1.0.0",
+  "description": "launch ide workspace from cwd",
+  "main": "index.js",
+  "bin": {
+    "workhere": "index.js"
+  },
+  "author": "crstffr",
+  "license": "ISC",
+  "dependencies": {
+    "cwd": "^0.10.0",
+    "opn": "^4.0.2"
+  }
+}
