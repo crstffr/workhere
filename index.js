@@ -1,41 +1,63 @@
 #!/usr/bin/env node
 
-var opn = require('opn');
-var cwd = require('cwd');
-var path = require('path');
 var colors = require('colors');
-var exec = require('child_process').exec;
+var settings = require('./lib/settings');
+var Container = require('./lib/container');
+var container = new Container(settings.data);
 
-var volume = cwd() + ':/workspace';
-var name = 'workspace-' + cwd().split(path.sep).pop();
+if (!container.running) {
+    
+    startContainer();
+    
+} else {
+    
+    // The settings we have saved say this thing was running,
+    // but we need to see what the current state is now.
 
-var command = 'docker run'
-            + ' -itd' 
-            + ' -p 80:80'
-            + ' -p 8100:8100'
-            + ' --name ' + name 
-            + ' -v ' + volume
-            + ' crstffr/workspace:latest';
+    container.getInfo().then(function() {
+        
+        // Now we have up-to-date information on the container
+        // so check if it's still running and open the existing
+        
+        if (container.running) {
             
-exec(command, function(error, stdout, stderr){
-    
-    if (error) {
-        console.log(String(stderr).red);
-        process.exit();
-    }
-    
-    var id = String(stdout).trim();
-    console.log('Container ID: ' + id);
-    
-    var intval = setInterval(function(){
-        console.log('Loading...');
-    }, 500);
-    
-    setTimeout(function() {
-        console.log('Done!');
-        clearInterval(intval);
-        opn('http://localhost');
-    }, 2000);
-    
-});
+            console.log('-------------------------------------'.cyan);
+            console.log(('Opening Container: ' + container.name + '...').cyan);
+            console.log('-------------------------------------'.cyan);
+            
+            container.open();
+            
+        } else {
+            
+            settings.write({});
+            startContainer();
+            
+        }
+      
+    }).catch(function() {
+        
+        settings.write({});
+        startContainer();
+        
+    });
+}
 
+
+function startContainer() {
+    
+    container.start().catch(function (err) {
+        
+        console.log(err.red);
+        process.exit();
+        
+    }).then(function (containerInfo) {
+        
+        settings.write(containerInfo);
+                    
+        setTimeout(function() {
+            container.open();
+        }, 2000);
+        
+    });
+    
+}
